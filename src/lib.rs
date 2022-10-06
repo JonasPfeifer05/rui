@@ -85,7 +85,6 @@ impl State {
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {
-
         false
     }
 
@@ -99,9 +98,11 @@ impl State {
             label: Some("Render Encoder"),
         });
 
+        let quadrat = shapes::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
+        let quadrat2 = shapes::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
 
         {
-            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[
                     // This is what @location(0) in the fragment shader targets
@@ -123,14 +124,11 @@ impl State {
                 ],
                 depth_stencil_attachment: None,
             });
+
+            quadrat.draw(self, &mut render_pass);
+            quadrat2.draw(self, &mut render_pass);
         }
 
-
-        let quadrat = shapes::Quadrat::new((-0.9,0.9), (0.3,-0.9));
-        quadrat.draw(self, &mut view, &mut encoder);
-
-        let quadrat2 = shapes::Quadrat::new((0.4,0.9), (0.9,-0.9));
-        quadrat2.draw(self, &mut view, &mut encoder);
         /*
         let render_pipeline = Quad::create_render_pipeline(&self);
         let quad2 = Quad::new(&self.device, (-0.9,0.9), (0.3,-0.9));

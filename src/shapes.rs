@@ -8,35 +8,19 @@ trait Vertex {
 }
 
 pub trait Shape {
-    fn generate_vertex_buffer(&self, device: &Device) -> Buffer;
-    fn generate_indices_buffer(&self, device: &Device) -> Buffer;
+    fn generate_vertex_buffer(&self, device: &Device) -> &Buffer;
+    fn generate_indices_buffer(&self, device: &Device) -> &Buffer;
     fn get_number_indices(&self) -> u32;
 
-    fn generate_render_pipeline(state: &State) -> RenderPipeline;
+    fn generate_render_pipeline(&self, state: &State) -> &RenderPipeline;
     //fn generate_render_pass<'a>(state: &State) -> RenderPass<'a>;
 
-    fn draw(&self, state: &State, view: &mut TextureView, encoder: &mut CommandEncoder) {
-        let render_pipeline = Self::generate_render_pipeline(state);
+    fn draw<'a>(&'a self, state: &State, render_pass: & mut RenderPass<'a>){
+        let render_pipeline = self.generate_render_pipeline(state);
         let vertex_buffer = self.generate_vertex_buffer(&state.device);
         let index_buffer = self.generate_indices_buffer(&state.device);
 
         {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[
-                    // This is what @location(0) in the fragment shader targets
-                    Some(wgpu::RenderPassColorAttachment {
-                        view: view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: true,
-                        },
-                    })
-                ],
-                depth_stencil_attachment: None,
-            });
-
             render_pass.set_pipeline(&render_pipeline);
 
             render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
@@ -77,53 +61,41 @@ impl Vertex for QuadVertex {
 }
 
 pub struct Quadrat {
-    pub top_left: (f32,f32),
-    pub bottom_right: (f32,f32),
+    pub top_left: (f32, f32),
+    pub bottom_right: (f32, f32),
+
+    vertex_buffer: Buffer,
+    indices_buffer: Buffer,
+
+    render_pipeline: RenderPipeline,
 }
 
 impl Quadrat {
-    pub fn new(top_left: (f32,f32), bottom_right: (f32,f32)) -> Self {
-        Self {
-            top_left,
-            bottom_right
-        }
-    }
-}
-
-impl Shape for Quadrat {
-    fn generate_vertex_buffer(&self, device: &Device) -> Buffer {
+    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), device: &Device, state: &State) -> Self {
         let vertices: &[QuadVertex] = &[
-            QuadVertex { position: [self.top_left.0, self.top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [self.top_left.0, self.bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [self.bottom_right.0, self.bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [self.bottom_right.0, self.top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
         ];
 
-        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX
-        })
-    }
+            usage: wgpu::BufferUsages::VERTEX,
+        });
 
-    fn generate_indices_buffer(&self, device: &Device) -> Buffer {
         let indices: &[u16] = &[
             0, 1, 2,
             0, 2, 3
         ];
-        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+
+        let indices_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(indices),
             usage: wgpu::BufferUsages::INDEX,
-        })
-    }
+        });
 
-    fn get_number_indices(&self) -> u32 {
-        6
-    }
-
-    fn generate_render_pipeline(state: &State) -> RenderPipeline {
-        let device = &state.device;
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
@@ -137,7 +109,7 @@ impl Shape for Quadrat {
                 push_constant_ranges: &[],
             });
 
-        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
@@ -175,7 +147,34 @@ impl Shape for Quadrat {
                 alpha_to_coverage_enabled: false, // 4.
             },
             multiview: None, // 5.
-        })
+        });
+
+
+        Self {
+            top_left,
+            bottom_right,
+            vertex_buffer,
+            indices_buffer,
+            render_pipeline,
+        }
+    }
+}
+
+impl Shape for Quadrat {
+    fn generate_vertex_buffer(&self, device: &Device) -> &Buffer {
+        &self.vertex_buffer
+    }
+
+    fn generate_indices_buffer(&self, device: &Device) -> &Buffer {
+        &self.indices_buffer
+    }
+
+    fn get_number_indices(&self) -> u32 {
+        6
+    }
+
+    fn generate_render_pipeline(&self, state: &State) -> &RenderPipeline {
+        &self.render_pipeline
     }
 }
 
