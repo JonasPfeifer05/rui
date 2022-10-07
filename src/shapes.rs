@@ -8,17 +8,17 @@ trait Vertex {
 }
 
 pub trait Shape {
-    fn generate_vertex_buffer(&self, device: &Device) -> &Buffer;
-    fn generate_indices_buffer(&self, device: &Device) -> &Buffer;
+    fn get_vertex_buffer(&self, device: &Device) -> &Buffer;
+    fn get_indices_buffer(&self, device: &Device) -> &Buffer;
     fn get_number_indices(&self) -> u32;
 
-    fn generate_render_pipeline(&self, state: &State) -> &RenderPipeline;
+    fn get_render_pipeline(&self, state: &State) -> &RenderPipeline;
     //fn generate_render_pass<'a>(state: &State) -> RenderPass<'a>;
 
     fn draw<'a>(&'a self, state: &State, render_pass: & mut RenderPass<'a>){
-        let render_pipeline = self.generate_render_pipeline(state);
-        let vertex_buffer = self.generate_vertex_buffer(&state.device);
-        let index_buffer = self.generate_indices_buffer(&state.device);
+        let render_pipeline = self.get_render_pipeline(state);
+        let vertex_buffer = self.get_vertex_buffer(&state.device);
+        let index_buffer = self.get_indices_buffer(&state.device);
 
         {
             render_pass.set_pipeline(&render_pipeline);
@@ -161,11 +161,11 @@ impl Quadrat {
 }
 
 impl Shape for Quadrat {
-    fn generate_vertex_buffer(&self, device: &Device) -> &Buffer {
+    fn get_vertex_buffer(&self, device: &Device) -> &Buffer {
         &self.vertex_buffer
     }
 
-    fn generate_indices_buffer(&self, device: &Device) -> &Buffer {
+    fn get_indices_buffer(&self, device: &Device) -> &Buffer {
         &self.indices_buffer
     }
 
@@ -173,7 +173,7 @@ impl Shape for Quadrat {
         6
     }
 
-    fn generate_render_pipeline(&self, state: &State) -> &RenderPipeline {
+    fn get_render_pipeline(&self, state: &State) -> &RenderPipeline {
         &self.render_pipeline
     }
 }
