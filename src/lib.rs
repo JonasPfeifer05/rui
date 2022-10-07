@@ -1,4 +1,3 @@
-
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -95,8 +94,8 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        let quadrat = shapes::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
-        let quadrat2 = shapes::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
+        let mut quadrat = shapes::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
+        let mut quadrat2 = shapes::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -122,8 +121,8 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            quadrat.draw(&mut render_pass);
-            quadrat2.draw(&mut render_pass);
+            quadrat.draw(&mut render_pass, &self.device);
+            quadrat2.draw(&mut render_pass, &self.device);
         }
 
         /*

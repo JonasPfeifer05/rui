@@ -8,13 +8,20 @@ trait Vertex {
 
 pub trait Shape {
     fn get_vertex_buffer(&self) -> &Buffer;
+    fn update_vertex_buffer(&mut self, device: &Device);
+
     fn get_indices_buffer(&self) -> &Buffer;
+    fn update_indices_buffer(&mut self, device: &Device);
+
     fn get_number_indices(&self) -> u32;
 
     fn get_render_pipeline(&self) -> &RenderPipeline;
-    //fn generate_render_pass<'a>(state: &State) -> RenderPass<'a>;
 
-    fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn draw<'a>(&'a mut self, render_pass: &mut RenderPass<'a>, device: &Device) {
+        //todo - may let shape mange update self
+        self.update_vertex_buffer(&device);
+        self.update_indices_buffer(&device);
+
         render_pass.set_pipeline(self.get_render_pipeline());
 
         render_pass.set_vertex_buffer(0, self.get_vertex_buffer().slice(..));
@@ -65,31 +72,6 @@ pub struct Quadrat {
 
 impl Quadrat {
     pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), device: &Device, state: &State) -> Self {
-        let vertices: &[QuadVertex] = &[
-            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
-        ];
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let indices: &[u16] = &[
-            0, 1, 2,
-            0, 2, 3
-        ];
-
-        let indices_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
-
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(include_str!("quad.wgsl").into()),
@@ -142,14 +124,45 @@ impl Quadrat {
             multiview: None, // 5.
         });
 
-
         Self {
             top_left,
             bottom_right,
-            vertex_buffer,
-            indices_buffer,
+            vertex_buffer: Self::generate_vertex_buffer(&top_left, &bottom_right, &device),
+            indices_buffer: Self::generate_indices_buffer(&device),
             render_pipeline,
         }
+    }
+
+    fn generate_vertex_buffer(top_left: &(f32, f32), bottom_right: &(f32, f32), device: &Device) -> Buffer {
+        let vertices: &[QuadVertex] = &[
+            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
+        ];
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        vertex_buffer
+    }
+
+    fn generate_indices_buffer(device: &Device) -> Buffer {
+        let indices: &[u16] = &[
+            0, 1, 2,
+            0, 2, 3
+        ];
+
+        let indices_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        indices_buffer
     }
 }
 
@@ -158,8 +171,16 @@ impl Shape for Quadrat {
         &self.vertex_buffer
     }
 
+    fn update_vertex_buffer(&mut self, device: &Device) {
+        self.vertex_buffer = Quadrat::generate_vertex_buffer(&self.top_left, &self.bottom_right, &device);
+    }
+
     fn get_indices_buffer(&self) -> &Buffer {
         &self.indices_buffer
+    }
+
+    fn update_indices_buffer(&mut self, device: &Device) {
+        self.indices_buffer = Quadrat::generate_indices_buffer(&device);
     }
 
     fn get_number_indices(&self) -> u32 {
