@@ -1,4 +1,4 @@
-use wgpu::{CommandEncoder, RenderPass, RenderPipeline};
+use wgpu::{CommandEncoder, RenderPass};
 use crate::State;
 
 trait Component {

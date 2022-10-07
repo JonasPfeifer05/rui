@@ -1,5 +1,4 @@
-use image::flat::View;
-use wgpu::{Buffer, BufferAddress, CommandEncoder, Device, IndexFormat, RenderPass, RenderPipeline, TextureView, VertexBufferLayout};
+use wgpu::{Buffer, BufferAddress, Device, IndexFormat, RenderPass, RenderPipeline, VertexBufferLayout};
 use wgpu::util::DeviceExt;
 use crate::State;
 
@@ -8,26 +7,20 @@ trait Vertex {
 }
 
 pub trait Shape {
-    fn get_vertex_buffer(&self, device: &Device) -> &Buffer;
-    fn get_indices_buffer(&self, device: &Device) -> &Buffer;
+    fn get_vertex_buffer(&self) -> &Buffer;
+    fn get_indices_buffer(&self) -> &Buffer;
     fn get_number_indices(&self) -> u32;
 
-    fn get_render_pipeline(&self, state: &State) -> &RenderPipeline;
+    fn get_render_pipeline(&self) -> &RenderPipeline;
     //fn generate_render_pass<'a>(state: &State) -> RenderPass<'a>;
 
-    fn draw<'a>(&'a self, state: &State, render_pass: & mut RenderPass<'a>){
-        let render_pipeline = self.get_render_pipeline(state);
-        let vertex_buffer = self.get_vertex_buffer(&state.device);
-        let index_buffer = self.get_indices_buffer(&state.device);
+    fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+        render_pass.set_pipeline(self.get_render_pipeline());
 
-        {
-            render_pass.set_pipeline(&render_pipeline);
+        render_pass.set_vertex_buffer(0, self.get_vertex_buffer().slice(..));
+        render_pass.set_index_buffer(self.get_indices_buffer().slice(..), IndexFormat::Uint16);
 
-            render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            render_pass.set_index_buffer(index_buffer.slice(..), IndexFormat::Uint16);
-
-            render_pass.draw_indexed(0..self.get_number_indices(), 0, 0..1);
-        }
+        render_pass.draw_indexed(0..self.get_number_indices(), 0, 0..1);
     }
 }
 
@@ -42,7 +35,7 @@ impl Vertex for QuadVertex {
     fn get_descriptor<'a>() -> VertexBufferLayout<'a> {
         use std::mem;
         VertexBufferLayout {
-            array_stride: mem::size_of::<QuadVertex>() as wgpu::BufferAddress,
+            array_stride: mem::size_of::<QuadVertex>() as BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -161,11 +154,11 @@ impl Quadrat {
 }
 
 impl Shape for Quadrat {
-    fn get_vertex_buffer(&self, device: &Device) -> &Buffer {
+    fn get_vertex_buffer(&self) -> &Buffer {
         &self.vertex_buffer
     }
 
-    fn get_indices_buffer(&self, device: &Device) -> &Buffer {
+    fn get_indices_buffer(&self) -> &Buffer {
         &self.indices_buffer
     }
 
@@ -173,7 +166,7 @@ impl Shape for Quadrat {
         6
     }
 
-    fn get_render_pipeline(&self, state: &State) -> &RenderPipeline {
+    fn get_render_pipeline(&self) -> &RenderPipeline {
         &self.render_pipeline
     }
 }

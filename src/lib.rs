@@ -1,15 +1,12 @@
-use wgpu::IndexFormat;
-use wgpu::util::DeviceExt;
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
     window::Window,
 };
-use crate::figures::{Quad, QuadVertex};
 
 mod texture;
-mod figures;
 mod component;
 mod shapes;
 
@@ -84,7 +81,7 @@ impl State {
         }
     }
 
-    fn input(&mut self, event: &WindowEvent) -> bool {
+    fn input(&mut self, _event: &WindowEvent) -> bool {
         false
     }
 
@@ -92,7 +89,7 @@ impl State {
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
-        let mut view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
@@ -125,8 +122,8 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            quadrat.draw(self, &mut render_pass);
-            quadrat2.draw(self, &mut render_pass);
+            quadrat.draw(&mut render_pass);
+            quadrat2.draw(&mut render_pass);
         }
 
         /*
