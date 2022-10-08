@@ -5,6 +5,7 @@ use winit::{
     window::Window,
 };
 use crate::shape::Shape;
+use crate::shapes::quad::Quad;
 use crate::shapes::shape;
 
 mod texture;
@@ -94,8 +95,8 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        let mut quadrat = shape::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
-        let mut quadrat2 = shape::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
+        let mut quadrat = Quad::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
+        let mut quadrat2 = Quad::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
