@@ -1,5 +1,5 @@
 use std::f32::consts::PI;
-use wgpu::{Buffer, BufferAddress, Device, RenderPipeline, VertexBufferLayout};
+use wgpu::{Buffer, Device, RenderPipeline};
 use wgpu::util::DeviceExt;
 use crate::shape::Vertex;
 use crate::{Shape, State};
