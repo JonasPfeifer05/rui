@@ -4,12 +4,12 @@ use winit::{
     window::WindowBuilder,
     window::Window,
 };
+use crate::shape::Shape;
+use crate::shapes::shape;
 
 mod texture;
 mod component;
 mod shapes;
-
-use shapes::Shape;
 
 pub struct State {
     surface: wgpu::Surface,
@@ -94,8 +94,8 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        let mut quadrat = shapes::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
-        let mut quadrat2 = shapes::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
+        let mut quadrat = shape::Quadrat::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
+        let mut quadrat2 = shape::Quadrat::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
