@@ -121,8 +121,8 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            quadrat.draw(&mut render_pass, &self.device);
-            quadrat2.draw(&mut render_pass, &self.device);
+            quadrat.draw(&mut render_pass);
+            quadrat2.draw(&mut render_pass);
         }
 
         /*
