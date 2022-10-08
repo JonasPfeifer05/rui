@@ -35,6 +35,7 @@ impl Vertex for QuadVertex {
 pub struct Quad {
     pub top_left: (f32, f32),
     pub bottom_right: (f32, f32),
+    pub color: [f32; 3],
 
     vertex_buffer: Buffer,
     indices_buffer: Buffer,
@@ -43,7 +44,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), device: &Device, state: &State) -> Self {
+    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), color: [f32; 3], device: &Device, state: &State) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(include_str!("../quad.wgsl").into()),
@@ -99,18 +100,19 @@ impl Quad {
         Self {
             top_left,
             bottom_right,
-            vertex_buffer: Self::generate_vertex_buffer(&top_left, &bottom_right, &device),
+            color,
+            vertex_buffer: Self::generate_vertex_buffer(&top_left, &bottom_right, &color, &device),
             indices_buffer: Self::generate_indices_buffer(&device),
             render_pipeline,
         }
     }
 
-    fn generate_vertex_buffer(top_left: &(f32, f32), bottom_right: &(f32, f32), device: &Device) -> Buffer {
+    fn generate_vertex_buffer(top_left: &(f32, f32), bottom_right: &(f32, f32), color: &[f32; 3], device: &Device) -> Buffer {
         let vertices: &[QuadVertex] = &[
-            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: [1.0, 1.0, 0.0] },
-            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: [1.0, 1.0, 0.0] },
+            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: color.clone() },
+            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: color.clone() },
+            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: color.clone() },
+            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: color.clone() },
         ];
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -144,7 +146,7 @@ impl Shape for Quad {
     }
 
     fn update_vertex_buffer(&mut self, device: &Device) {
-        self.vertex_buffer = Quad::generate_vertex_buffer(&self.top_left, &self.bottom_right, &device);
+        self.vertex_buffer = Quad::generate_vertex_buffer(&self.top_left, &self.bottom_right, &self.color, &device);
     }
 
     fn get_indices_buffer(&self) -> &Buffer {

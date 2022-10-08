@@ -96,12 +96,12 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        let mut quadrat = Quad::new((-0.9, 0.9), (0.3, -0.9), &self.device, &self);
-        let mut quadrat2 = Quad::new((0.4, 0.9), (0.9, -0.9), &self.device, &self);
-        let mut oval = Oval::new((1.0, 1.0), (0.1,0.1), 64, &self.device, &self);
-        let mut oval1 = Oval::new((-1.0, 1.0), (0.5,0.1), 64, &self.device, &self);
-        let mut oval2 = Oval::new((1.0, -1.0), (0.5,0.1), 64, &self.device, &self);
-        let mut oval3 = Oval::new((-1.0, -1.0), (0.1,0.1), 64, &self.device, &self);
+        let mut quadrat = Quad::new((-0.9, 0.9), (0.3, -0.9), [0.1, 0.1, 0.1], &self.device, &self);
+        let mut quadrat2 = Quad::new((0.4, 0.9), (0.9, -0.9), [0.1, 0.1, 0.1], &self.device, &self);
+        let mut oval = Oval::new((1.0, 1.0), (0.1, 0.1), 64, [1.0, 0.1, 0.1], &self.device, &self);
+        let mut oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
+        let mut oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
+        let mut oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

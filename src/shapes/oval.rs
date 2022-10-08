@@ -9,6 +9,7 @@ pub struct Oval {
     pub center: (f32, f32),
     pub diameter: (f32, f32),
     pub triangle_count: u16,
+    pub color: [f32; 3],
 
     vertex_buffer: Buffer,
     indices_buffer: Buffer,
@@ -17,7 +18,7 @@ pub struct Oval {
 }
 
 impl Oval {
-    pub fn new(center: (f32, f32), diameter: (f32, f32), triangle_count: u16, device: &Device, state: &State) -> Self {
+    pub fn new(center: (f32, f32), diameter: (f32, f32), triangle_count: u16, color: [f32; 3], device: &Device, state: &State) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(include_str!("../quad.wgsl").into()),
@@ -74,13 +75,14 @@ impl Oval {
             center,
             diameter,
             triangle_count,
-            vertex_buffer: Self::generate_vertex_buffer(&center, &diameter, &triangle_count, &device),
+            color,
+            vertex_buffer: Self::generate_vertex_buffer(&center, &diameter, &triangle_count, &color, &device),
             indices_buffer: Self::generate_indices_buffer(&triangle_count, &device),
             render_pipeline,
         }
     }
 
-    fn generate_vertex_buffer(center: &(f32, f32), diameter: &(f32,f32), triangle_count: &u16, device: &Device) -> Buffer {
+    fn generate_vertex_buffer(center: &(f32, f32), diameter: &(f32, f32), triangle_count: &u16, color: &[f32; 3], device: &Device) -> Buffer {
         let mut vertices = Vec::new();
 
         let vertex_count = triangle_count + 2;
@@ -88,7 +90,7 @@ impl Oval {
         for i in 0..vertex_count {
             let angle = ((PI * 2.0) / vertex_count as f32) * i as f32;
 
-            vertices.push(QuadVertex { position: [angle.cos() * diameter.0 + center.0, angle.sin() * diameter.1 + center.1, 0.0], color: [1.0, 1.0, 0.0] });
+            vertices.push(QuadVertex { position: [angle.cos() * diameter.0 + center.0, angle.sin() * diameter.1 + center.1, 0.0], color: color.clone() });
         }
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -125,7 +127,7 @@ impl Shape for Oval {
     }
 
     fn update_vertex_buffer(&mut self, device: &Device) {
-        self.vertex_buffer = Oval::generate_vertex_buffer(&self.center, &self.diameter, &self.triangle_count, &device);
+        self.vertex_buffer = Oval::generate_vertex_buffer(&self.center, &self.diameter, &self.triangle_count, &self.color, &device);
     }
 
     fn get_indices_buffer(&self) -> &Buffer {
