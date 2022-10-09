@@ -15,7 +15,7 @@ pub trait Shape {
 
     fn get_render_pipeline(&self) -> &RenderPipeline;
 
-    fn draw<'a>(&'a mut self, render_pass: &mut RenderPass<'a>) {
+    fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         render_pass.set_pipeline(self.get_render_pipeline());
 
         render_pass.set_vertex_buffer(0, self.get_vertex_buffer().slice(..));

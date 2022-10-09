@@ -1,17 +1,22 @@
+extern crate core;
+
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
     window::Window,
 };
+use crate::components::clickable::ClickableComponent;
+use crate::components::component::Component;
+use crate::components::layout::LayoutComponent;
+
 use crate::shape::Shape;
 use crate::shapes::oval::Oval;
-use crate::shapes::quad::Quad;
 use crate::shapes::shape;
 
 mod texture;
-mod component;
 mod shapes;
+mod components;
 
 pub struct State {
     surface: wgpu::Surface,
@@ -19,6 +24,10 @@ pub struct State {
     queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
+
+    last_mouse_position: (f32,f32),
+
+    root: Option<LayoutComponent>,
 }
 
 impl State {
@@ -65,11 +74,13 @@ impl State {
         surface.configure(&device, &config);
 
         Self {
+            root: None,
             surface,
             device,
             queue,
             config,
             size,
+            last_mouse_position: (0.0, 0.0)
         }
     }
 
@@ -83,6 +94,22 @@ impl State {
     }
 
     fn input(&mut self, _event: &WindowEvent) -> bool {
+        match _event {
+            WindowEvent::CursorMoved {position, .. } =>{
+                self.last_mouse_position = ((position.x as f32 / self.config.width as f32 * 2.0) - 1.0,
+                                            ((position.y as f32 / self.config.height as f32 * 2.0) - 1.0) * -1.0);
+            }
+            WindowEvent::MouseInput { state: ElementState::Pressed, button: MouseButton::Left, .. } => {
+                match &mut self.root {
+                    None => {}
+                    Some(root) => {
+                        root.on_click(self.last_mouse_position);
+                        root.resize((0.0,1.0), (1.0, -1.0));
+                    }
+                }
+            }
+            _ => {}
+        }
         false
     }
 
@@ -96,12 +123,66 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        let mut quadrat = Quad::new((-0.9, 0.9), (0.3, -0.9), [0.1, 0.1, 0.1], &self.device, &self);
-        let mut quadrat2 = Quad::new((0.4, 0.9), (0.9, -0.9), [0.1, 0.1, 0.1], &self.device, &self);
-        let mut oval = Oval::new((1.0, 1.0), (0.1, 0.1), 64, [1.0, 0.1, 0.1], &self.device, &self);
-        let mut oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
-        let mut oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
-        let mut oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
+        use components::layout::LayoutComponent;
+        use components::plain::PlainComponent;
+
+        if self.root.is_none() {
+            let mut layout_component = LayoutComponent::new(None,
+                                                            (-0.7, 0.7),
+                                                            (0.7, -0.7));
+
+            let mut layout_component2 = LayoutComponent::new(Some(&layout_component),
+                                                             (-1.0, 0.7),
+                                                             (1.0, -1.0));
+
+            let mut layout_component3 = LayoutComponent::new(Some(&layout_component2),
+                                                             (0.0, 1.0),
+                                                             (1.0, -1.0));
+
+            let plain_component = PlainComponent::new(&layout_component,
+                                                      (-1.0, 1.0),
+                                                      (1.0, 0.7),
+                                                      [1.0, 1.0, 0.0],
+                                                      &self.device,
+                                                      &self
+            );
+
+            let plain_component2 = PlainComponent::new(&layout_component2,
+                                                       (-1.0, 1.0),
+                                                       (0.0, -1.0),
+                                                       [1.0, 0.0, 0.0],
+                                                       &self.device,
+                                                       &self);
+
+            let plain_component3 = PlainComponent::new(&layout_component3,
+                                                       (-1.0, 1.0),
+                                                       (1.0, 0.0),
+                                                       [0.0, 1.0, 0.0],
+                                                       &self.device,
+                                                       &self);
+            let clickable_component = ClickableComponent::new(&layout_component3,
+                                                              (-1.0, 0.0),
+                                                              (1.0, -1.0),
+                                                              [0.0, 0.0, 1.0],
+                                                              &self.device,
+                                                              &self);
+
+            layout_component3.add_component(Box::new(plain_component3));
+            layout_component3.add_component(Box::new(clickable_component));
+
+            layout_component2.add_component(Box::new(layout_component3));
+            layout_component2.add_component(Box::new(plain_component2));
+
+            layout_component.add_component(Box::new(layout_component2));
+            layout_component.add_component(Box::new(plain_component));
+
+            self.root = Some(layout_component);
+        }
+
+        let oval = Oval::new((1.0, 1.0), (0.1, 0.1), 64, [1.0, 0.1, 0.1], &self.device, &self);
+        let oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
+        let oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
+        let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -132,8 +213,13 @@ impl State {
             oval2.draw(&mut render_pass);
             oval3.draw(&mut render_pass);
 
-            quadrat.draw(&mut render_pass);
-            quadrat2.draw(&mut render_pass);
+            //quadrat.draw(&mut render_pass);
+            //quadrat2.draw(&mut render_pass);
+
+            match &self.root {
+                None => {}
+                Some(root) => {root.render(&mut render_pass)}
+            }
         }
 
         /*
