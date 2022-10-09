@@ -1,13 +1,14 @@
 use wgpu::RenderPass;
+use crate::State;
 
 
 pub trait Component {
-    fn render<'a>(&'a self, render_pass: &mut RenderPass<'a>);
-    fn get_top_left(&self) -> (f32,f32);
-    fn get_bottom_right(&self) -> (f32,f32);
+    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, state: &State);
+    fn get_top_left(&self) -> (f32, f32);
+    fn get_bottom_right(&self) -> (f32, f32);
 
-    fn on_click(&self, position: (f32,f32)) {}
-    fn in_bound(&self, point: (f32,f32)) -> bool {
+    fn on_click(&self, position: (f32, f32)) {}
+    fn in_bound(&self, point: (f32, f32)) -> bool {
         if point.0 > self.get_top_left().0 && point.0 < self.get_bottom_right().0 {
             if point.1 < self.get_top_left().1 && point.1 > self.get_bottom_right().1 {
                 return true;
@@ -17,9 +18,9 @@ pub trait Component {
         false
     }
 
-    fn resize(&mut self, new_box_top_left: (f32,f32), new_box_bottom_right: (f32,f32));
+    fn resize(&mut self, new_box_top_left: (f32, f32), new_box_bottom_right: (f32, f32));
 
-    fn on_resize(&mut self, new_parent_top_left: (f32,f32), new_parent_bottom_right: (f32,f32));
+    fn on_resize(&mut self, new_parent_top_left: (f32, f32), new_parent_bottom_right: (f32, f32));
 }
 
 pub struct ComponentUtils {}
@@ -37,7 +38,7 @@ impl ComponentUtils {
         point
     }
 
-    fn compute_to_view(mut point: (f32,f32)) -> (f32,f32) {
+    fn compute_to_view(mut point: (f32, f32)) -> (f32, f32) {
         point.0 *= 2.0;
         point.1 *= 2.0;
 
@@ -49,7 +50,7 @@ impl ComponentUtils {
         point
     }
 
-    fn calculate_absolute(parent_top_left: (f32,f32), parent_bottom_right: (f32,f32), point: (f32,f32)) -> (f32,f32) {
+    fn calculate_absolute(parent_top_left: (f32, f32), parent_bottom_right: (f32, f32), point: (f32, f32)) -> (f32, f32) {
         let mut new_point = (0.0, 0.0);
 
         new_point.0 = parent_top_left.0 + (parent_bottom_right.0 - parent_top_left.0) * point.0;
