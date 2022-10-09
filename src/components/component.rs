@@ -1,5 +1,16 @@
 use wgpu::{Device, RenderPass, SurfaceConfiguration};
 
+pub struct ComponentBasicData{
+    pub top_left: (f32, f32),
+    pub bottom_right: (f32, f32),
+}
+
+pub struct ComponentBasicResizeData{
+    pub top_left: (f32, f32),
+    pub bottom_right: (f32, f32),
+    pub needs_resize: bool
+}
+
 pub trait Component {
     fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, device: &Device, config: &SurfaceConfiguration);
     fn get_top_left(&self) -> (f32, f32);
@@ -17,8 +28,7 @@ pub trait Component {
     }
 
     fn resize(&mut self, new_box_top_left: (f32, f32), new_box_bottom_right: (f32, f32));
-
-    fn on_resize(&mut self, new_parent_top_left: (f32, f32), new_parent_bottom_right: (f32, f32));
+    fn on_resize(&mut self);
 }
 
 pub struct ComponentUtils {}
