@@ -6,7 +6,9 @@ use winit::{
     window::WindowBuilder,
     window::Window,
 };
+use crate::components::clickable::ClickableComponent;
 use crate::components::component::Component;
+use crate::components::layout::LayoutComponent;
 
 use crate::shape::Shape;
 use crate::shapes::oval::Oval;
@@ -22,6 +24,10 @@ pub struct State {
     queue: wgpu::Queue,
     pub config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
+
+    last_mouse_position: (f32,f32),
+
+    root: Option<LayoutComponent>,
 }
 
 impl State {
@@ -68,11 +74,13 @@ impl State {
         surface.configure(&device, &config);
 
         Self {
+            root: None,
             surface,
             device,
             queue,
             config,
             size,
+            last_mouse_position: (0.0, 0.0)
         }
     }
 
@@ -86,6 +94,22 @@ impl State {
     }
 
     fn input(&mut self, _event: &WindowEvent) -> bool {
+        match _event {
+            WindowEvent::CursorMoved {position, .. } =>{
+                self.last_mouse_position = ((position.x as f32 / self.config.width as f32 * 2.0) - 1.0,
+                                            ((position.y as f32 / self.config.height as f32 * 2.0) - 1.0) * -1.0);
+            }
+            WindowEvent::MouseInput { state: ElementState::Pressed, button: MouseButton::Left, .. } => {
+                match &mut self.root {
+                    None => {}
+                    Some(root) => {
+                        root.on_click(self.last_mouse_position);
+                        root.resize((0.0,1.0), (1.0, -1.0));
+                    }
+                }
+            }
+            _ => {}
+        }
         false
     }
 
@@ -102,62 +126,58 @@ impl State {
         use components::layout::LayoutComponent;
         use components::plain::PlainComponent;
 
-        let mut layout_component = LayoutComponent::new((-1.0, 1.0),
-                                                        (1.0, -1.0),
-                                                        (-0.7, 0.7),
-                                                        (0.7, -0.7));
+        if self.root.is_none() {
+            let mut layout_component = LayoutComponent::new(None,
+                                                            (-0.7, 0.7),
+                                                            (0.7, -0.7));
 
-        let mut layout_component2 = LayoutComponent::new(layout_component.get_top_left(),
-                                                         layout_component.get_bottom_right(),
-                                                         (-1.0, 0.7),
-                                                         (1.0, -1.0));
+            let mut layout_component2 = LayoutComponent::new(Some(&layout_component),
+                                                             (-1.0, 0.7),
+                                                             (1.0, -1.0));
 
-        let mut layout_component3 = LayoutComponent::new(layout_component2.get_top_left(),
-                                                         layout_component2.get_bottom_right(),
-                                                         (0.0, 1.0),
-                                                         (1.0, -1.0));
+            let mut layout_component3 = LayoutComponent::new(Some(&layout_component2),
+                                                             (0.0, 1.0),
+                                                             (1.0, -1.0));
 
-        let plain_component = PlainComponent::new(layout_component.get_top_left(),
-                                                  layout_component.get_bottom_right(),
-                                                  (-1.0,1.0),
-                                                  (1.0,0.7),
-                                                  [1.0,1.0,0.0],
-                                                  &self.device,
-                                                  &self
-        );
+            let plain_component = PlainComponent::new(&layout_component,
+                                                      (-1.0, 1.0),
+                                                      (1.0, 0.7),
+                                                      [1.0, 1.0, 0.0],
+                                                      &self.device,
+                                                      &self
+            );
 
-        let plain_component2 = PlainComponent::new(layout_component2.get_top_left(),
-                                                   layout_component2.get_bottom_right(),
-                                                   (-1.0, 1.0),
-                                                   (0.0, -1.0),
-                                                   [1.0, 0.0, 0.0],
-                                                   &self.device,
-                                                   &self);
+            let plain_component2 = PlainComponent::new(&layout_component2,
+                                                       (-1.0, 1.0),
+                                                       (0.0, -1.0),
+                                                       [1.0, 0.0, 0.0],
+                                                       &self.device,
+                                                       &self);
 
-        let plain_component3 = PlainComponent::new(layout_component3.get_top_left(),
-                                                   layout_component3.get_bottom_right(),
-                                                   (-1.0, 1.0),
-                                                   (1.0, 0.0),
-                                                   [0.0, 1.0, 0.0],
-                                                   &self.device,
-                                                   &self);
-        let plain_component4 = PlainComponent::new(layout_component3.get_top_left(),
-                                                   layout_component3.get_bottom_right(),
-                                                   (-1.0, 0.0),
-                                                   (1.0, -1.0),
-                                                   [0.0, 0.0, 1.0],
-                                                   &self.device,
-                                                   &self);
+            let plain_component3 = PlainComponent::new(&layout_component3,
+                                                       (-1.0, 1.0),
+                                                       (1.0, 0.0),
+                                                       [0.0, 1.0, 0.0],
+                                                       &self.device,
+                                                       &self);
+            let clickable_component = ClickableComponent::new(&layout_component3,
+                                                              (-1.0, 0.0),
+                                                              (1.0, -1.0),
+                                                              [0.0, 0.0, 1.0],
+                                                              &self.device,
+                                                              &self);
 
-        layout_component3.add_component(Box::new(&plain_component3));
-        layout_component3.add_component(Box::new(&plain_component4));
+            layout_component3.add_component(Box::new(plain_component3));
+            layout_component3.add_component(Box::new(clickable_component));
 
-        layout_component2.add_component(Box::new(&layout_component3));
-        layout_component2.add_component(Box::new(&plain_component2));
+            layout_component2.add_component(Box::new(layout_component3));
+            layout_component2.add_component(Box::new(plain_component2));
 
-        layout_component.add_component(Box::new(&layout_component2));
-        layout_component.add_component(Box::new(&plain_component));
+            layout_component.add_component(Box::new(layout_component2));
+            layout_component.add_component(Box::new(plain_component));
 
+            self.root = Some(layout_component);
+        }
 
         let oval = Oval::new((1.0, 1.0), (0.1, 0.1), 64, [1.0, 0.1, 0.1], &self.device, &self);
         let oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
@@ -196,7 +216,10 @@ impl State {
             //quadrat.draw(&mut render_pass);
             //quadrat2.draw(&mut render_pass);
 
-            layout_component.render(&mut render_pass);
+            match &self.root {
+                None => {}
+                Some(root) => {root.render(&mut render_pass)}
+            }
         }
 
         /*

@@ -1,16 +1,16 @@
 use wgpu::{Device, RenderPass};
-use crate::{LayoutComponent, Shape, State};
-use super::super::shapes::quad::Quad;
-use super::component::{ComponentUtils, Component};
+use crate::{Component, LayoutComponent, Shape, State};
+use crate::components::component::ComponentUtils;
+use crate::shapes::quad::Quad;
 
-pub struct PlainComponent {
+pub struct ClickableComponent {
     top_left: (f32,f32),
     bottom_right: (f32,f32),
 
     quad: Quad,
 }
 
-impl<'a> PlainComponent {
+impl ClickableComponent {
     pub fn new(parent: &LayoutComponent, box_top_left: (f32,f32), box_bottom_right: (f32, f32), color: [f32; 3], device: &Device, state: &State) -> Self {
         let (top_left, bottom_right) = ComponentUtils::calculate_absolute_from_relative_view_points(parent.get_top_left(),
                                                                                                     parent.get_bottom_right(),
@@ -31,7 +31,7 @@ impl<'a> PlainComponent {
     }
 }
 
-impl Component for PlainComponent {
+impl Component for ClickableComponent {
     fn render<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         self.quad.draw(render_pass);
     }
@@ -42,6 +42,10 @@ impl Component for PlainComponent {
 
     fn get_bottom_right(&self) -> (f32, f32) {
         self.bottom_right
+    }
+
+    fn on_click(&self, position: (f32,f32)) {
+        println!("Hello from ClickabelComponent");
     }
 
     fn resize(&mut self, new_box_top_left: (f32, f32), new_box_bottom_right: (f32, f32)) {
