@@ -102,17 +102,58 @@ impl State {
         use components::layout::LayoutComponent;
         use components::plain::PlainComponent;
 
-        let mut layout_component = LayoutComponent::new((-1.0, 1.0), (1.0, -1.0), (-0.7, 0.7), (0.7, -0.7));
+        let mut layout_component = LayoutComponent::new((-1.0, 1.0),
+                                                        (1.0, -1.0),
+                                                        (-0.7, 0.7),
+                                                        (0.7, -0.7));
 
-        let mut layout_component2 = LayoutComponent::new(layout_component.get_top_left(), layout_component.get_bottom_right(), (0.0, 1.0), (1.0, -1.0));
+        let mut layout_component2 = LayoutComponent::new(layout_component.get_top_left(),
+                                                         layout_component.get_bottom_right(),
+                                                         (-1.0, 0.7),
+                                                         (1.0, -1.0));
 
-        let plain_component = PlainComponent::new(layout_component.get_top_left(), layout_component.get_bottom_right(), (-1.0, 1.0), (0.0, -1.0), [1.0, 0.0, 0.0], &self.device, &self);
+        let mut layout_component3 = LayoutComponent::new(layout_component2.get_top_left(),
+                                                         layout_component2.get_bottom_right(),
+                                                         (0.0, 1.0),
+                                                         (1.0, -1.0));
 
-        let plain_component2 = PlainComponent::new(layout_component2.get_top_left(), layout_component2.get_bottom_right(), (-1.0, 1.0), (1.0, 0.0), [0.0, 1.0, 0.0], &self.device, &self);
-        let plain_component3 = PlainComponent::new(layout_component2.get_top_left(), layout_component2.get_bottom_right(), (-1.0, 0.0), (1.0, -1.0), [0.0, 0.0, 1.0], &self.device, &self);
+        let plain_component = PlainComponent::new(layout_component.get_top_left(),
+                                                  layout_component.get_bottom_right(),
+                                                  (-1.0,1.0),
+                                                  (1.0,0.7),
+                                                  [1.0,1.0,0.0],
+                                                  &self.device,
+                                                  &self
+        );
 
+        let plain_component2 = PlainComponent::new(layout_component2.get_top_left(),
+                                                   layout_component2.get_bottom_right(),
+                                                   (-1.0, 1.0),
+                                                   (0.0, -1.0),
+                                                   [1.0, 0.0, 0.0],
+                                                   &self.device,
+                                                   &self);
+
+        let plain_component3 = PlainComponent::new(layout_component3.get_top_left(),
+                                                   layout_component3.get_bottom_right(),
+                                                   (-1.0, 1.0),
+                                                   (1.0, 0.0),
+                                                   [0.0, 1.0, 0.0],
+                                                   &self.device,
+                                                   &self);
+        let plain_component4 = PlainComponent::new(layout_component3.get_top_left(),
+                                                   layout_component3.get_bottom_right(),
+                                                   (-1.0, 0.0),
+                                                   (1.0, -1.0),
+                                                   [0.0, 0.0, 1.0],
+                                                   &self.device,
+                                                   &self);
+
+        layout_component3.add_component(Box::new(&plain_component3));
+        layout_component3.add_component(Box::new(&plain_component4));
+
+        layout_component2.add_component(Box::new(&layout_component3));
         layout_component2.add_component(Box::new(&plain_component2));
-        layout_component2.add_component(Box::new(&plain_component3));
 
         layout_component.add_component(Box::new(&layout_component2));
         layout_component.add_component(Box::new(&plain_component));
