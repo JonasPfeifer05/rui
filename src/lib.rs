@@ -1,6 +1,5 @@
 extern crate core;
 
-use std::borrow::BorrowMut;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -124,7 +123,6 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        use components::layout::LayoutComponent;
         use components::plain::PlainComponent;
 
         if self.root.is_none() {
@@ -144,28 +142,31 @@ impl State {
                 (-1.0, 1.0),
                 (1.0, 0.7),
                 [1.0, 1.0, 0.0],
-                &self
+                &self.device,
+                &self.config,
             );
 
             let plain_component2 = PlainComponent::new(
                 (-1.0, 1.0),
                 (0.0, -1.0),
                 [1.0, 0.0, 0.0],
-                &self
+                &self.device,
+                &self.config,
             );
 
             let plain_component3 = PlainComponent::new(
                 (-1.0, 1.0),
                 (1.0, 0.0),
                 [0.0, 1.0, 0.0],
-                &self
+                &self.device,
+                &self.config,
             );
-            let clickable_component = ClickableComponent::new(&layout_component3,
-                                                              (-1.0, 0.0),
-                                                              (1.0, -1.0),
-                                                              [0.0, 0.0, 1.0],
-                                                              &self.device,
-                                                              &self);
+            let clickable_component = ClickableComponent::new(
+                (-1.0, 0.0),
+                (1.0, -1.0),
+                [0.0, 0.0, 1.0],
+                &self.device,
+                &self.config);
 
             layout_component3.add_component(Box::new(plain_component3));
             layout_component3.add_component(Box::new(clickable_component));
@@ -216,9 +217,9 @@ impl State {
             //quadrat.draw(&mut render_pass);
             //quadrat2.draw(&mut render_pass);
 
-            match &self.root {
-                None => {}
-                Some(root) => { root.render(&(0.0, 0.0), &(1.0, 1.0), &mut render_pass, &self) }
+            if self.root.is_some()
+            {
+                self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
             }
         }
 

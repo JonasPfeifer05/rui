@@ -1,9 +1,7 @@
-use wgpu::RenderPass;
-use crate::State;
-
+use wgpu::{Device, RenderPass, SurfaceConfiguration};
 
 pub trait Component {
-    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, state: &State);
+    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, device: &Device, config: &SurfaceConfiguration);
     fn get_top_left(&self) -> (f32, f32);
     fn get_bottom_right(&self) -> (f32, f32);
 

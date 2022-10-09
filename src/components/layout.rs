@@ -1,6 +1,4 @@
-use wgpu::RenderPass;
-use crate::State;
-
+use wgpu::{Device, RenderPass, SurfaceConfiguration};
 use super::component::{ComponentUtils, Component};
 
 pub struct LayoutComponent {
@@ -25,14 +23,14 @@ impl LayoutComponent {
 }
 
 impl Component for LayoutComponent {
-    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, state: &State) {
+    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, device: &Device, config: &SurfaceConfiguration) {
         let (absolute_top_left, absolut_bottom_right) = ComponentUtils::calculate_absolute_from_relative_view_points(parent_top_left.clone(),
                                                                                                                      parent_bottom_right.clone(),
                                                                                                                      self.top_left,
                                                                                                                      self.bottom_right);
 
         for x in self.components.iter_mut() {
-            x.render(&absolute_top_left, &absolut_bottom_right, render_pass, state);
+            x.render(&absolute_top_left, &absolut_bottom_right, render_pass, device, config);
         }
     }
 

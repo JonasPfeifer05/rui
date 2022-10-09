@@ -1,5 +1,5 @@
-use wgpu::{Device, RenderPass};
-use crate::{LayoutComponent, Shape, State};
+use wgpu::{Device, RenderPass, SurfaceConfiguration};
+use crate::{Shape};
 use super::super::shapes::quad::Quad;
 use super::component::{ComponentUtils, Component};
 
@@ -12,7 +12,7 @@ pub struct PlainComponent {
 }
 
 impl<'a> PlainComponent {
-    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), color: [f32; 3], state: &State) -> Self {
+    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), color: [f32; 3], device: &Device, config: &SurfaceConfiguration) -> Self {
         Self {
             top_left,
             bottom_right,
@@ -20,14 +20,14 @@ impl<'a> PlainComponent {
             quad: Quad::new(top_left,
                             bottom_right,
                             color,
-                            &state.device,
-                            state),
+                            device,
+                            config),
         }
     }
 }
 
 impl Component for PlainComponent {
-    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, state: &State) {
+    fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, device: &Device, config: &SurfaceConfiguration) {
         let (absolute_top_left, absolut_bottom_right) = ComponentUtils::calculate_absolute_from_relative_view_points(parent_top_left.clone(),
                                                                                                                      parent_bottom_right.clone(),
                                                                                                                      self.top_left,
@@ -36,8 +36,8 @@ impl Component for PlainComponent {
         self.quad = Quad::new(absolute_top_left,
                               absolut_bottom_right,
                               self.color,
-                              &state.device,
-                              state);
+                              device,
+                              config);
 
 
         self.quad.draw(render_pass);

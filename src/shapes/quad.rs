@@ -1,7 +1,7 @@
-use wgpu::{Buffer, BufferAddress, Device, RenderPipeline, VertexBufferLayout};
+use wgpu::{Buffer, BufferAddress, Device, RenderPipeline, SurfaceConfiguration, VertexBufferLayout};
 use wgpu::util::DeviceExt;
 use crate::shape::Vertex;
-use crate::{Shape, State};
+use crate::{Shape};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -44,7 +44,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), color: [f32; 3], device: &Device, state: &State) -> Self {
+    pub fn new(top_left: (f32, f32), bottom_right: (f32, f32), color: [f32; 3], device: &Device, config: &SurfaceConfiguration) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(include_str!("../quad.wgsl").into()),
@@ -71,7 +71,7 @@ impl Quad {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState { // 4.
-                    format: state.config.format,
+                    format: config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
