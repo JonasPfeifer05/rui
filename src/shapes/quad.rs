@@ -1,36 +1,7 @@
 use wgpu::{Buffer, BufferAddress, Device, RenderPipeline, SurfaceConfiguration, VertexBufferLayout};
 use wgpu::util::DeviceExt;
-use crate::shape::Vertex;
 use crate::{Shape};
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct QuadVertex {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
-}
-
-impl Vertex for QuadVertex {
-    fn get_descriptor<'a>() -> VertexBufferLayout<'a> {
-        use std::mem;
-        VertexBufferLayout {
-            array_stride: mem::size_of::<QuadVertex>() as BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 3]>() as BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                }
-            ],
-        }
-    }
-}
+use crate::shapes::vertex::{BasicColorVertex, Vertex};
 
 pub struct Quad {
     pub top_left: (f32, f32),
@@ -64,7 +35,7 @@ impl Quad {
                 module: &shader,
                 entry_point: "vs_main", // 1.
                 buffers: &[
-                    QuadVertex::get_descriptor(),
+                    BasicColorVertex::get_descriptor(),
                 ], // 2.
             },
             fragment: Some(wgpu::FragmentState { // 3.
@@ -108,11 +79,11 @@ impl Quad {
     }
 
     fn generate_vertex_buffer(top_left: &(f32, f32), bottom_right: &(f32, f32), color: &[f32; 3], device: &Device) -> Buffer {
-        let vertices: &[QuadVertex] = &[
-            QuadVertex { position: [top_left.0, top_left.1, 0.0], color: color.clone() },
-            QuadVertex { position: [top_left.0, bottom_right.1, 0.0], color: color.clone() },
-            QuadVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: color.clone() },
-            QuadVertex { position: [bottom_right.0, top_left.1, 0.0], color: color.clone() },
+        let vertices: &[BasicColorVertex] = &[
+            BasicColorVertex { position: [top_left.0, top_left.1, 0.0], color: color.clone() },
+            BasicColorVertex { position: [top_left.0, bottom_right.1, 0.0], color: color.clone() },
+            BasicColorVertex { position: [bottom_right.0, bottom_right.1, 0.0], color: color.clone() },
+            BasicColorVertex { position: [bottom_right.0, top_left.1, 0.0], color: color.clone() },
         ];
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

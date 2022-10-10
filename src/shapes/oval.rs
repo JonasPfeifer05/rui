@@ -1,9 +1,8 @@
 use std::f32::consts::PI;
 use wgpu::{Buffer, Device, RenderPipeline};
 use wgpu::util::DeviceExt;
-use crate::shape::Vertex;
 use crate::{Shape, State};
-use crate::shapes::quad::QuadVertex;
+use crate::shapes::vertex::{BasicColorVertex, Vertex};
 
 pub struct Oval {
     pub center: (f32, f32),
@@ -38,7 +37,7 @@ impl Oval {
                 module: &shader,
                 entry_point: "vs_main", // 1.
                 buffers: &[
-                    QuadVertex::get_descriptor(),
+                    BasicColorVertex::get_descriptor(),
                 ], // 2.
             },
             fragment: Some(wgpu::FragmentState { // 3.
@@ -90,7 +89,7 @@ impl Oval {
         for i in 0..vertex_count {
             let angle = ((PI * 2.0) / vertex_count as f32) * i as f32;
 
-            vertices.push(QuadVertex { position: [angle.cos() * diameter.0 + center.0, angle.sin() * diameter.1 + center.1, 0.0], color: color.clone() });
+            vertices.push(BasicColorVertex { position: [angle.cos() * diameter.0 + center.0, angle.sin() * diameter.1 + center.1, 0.0], color: color.clone() });
         }
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
