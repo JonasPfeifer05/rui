@@ -1,8 +1,4 @@
-use wgpu::{Buffer, Device, IndexFormat, RenderPass, RenderPipeline, VertexBufferLayout};
-
-pub trait Vertex {
-    fn get_descriptor<'a>() -> VertexBufferLayout<'a>;
-}
+use wgpu::{Buffer, Device, IndexFormat, RenderPass, RenderPipeline};
 
 pub trait Shape {
     fn get_vertex_buffer(&self) -> &Buffer;
