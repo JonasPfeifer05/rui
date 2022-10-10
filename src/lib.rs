@@ -25,7 +25,7 @@ pub struct State {
     pub config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
 
-    last_mouse_position: (f32,f32),
+    last_mouse_position: (f32, f32),
 
     root: Option<LayoutComponent>,
 }
@@ -80,7 +80,7 @@ impl State {
             queue,
             config,
             size,
-            last_mouse_position: (0.0, 0.0)
+            last_mouse_position: (0.0, 0.0),
         }
     }
 
@@ -95,7 +95,7 @@ impl State {
 
     fn input(&mut self, _event: &WindowEvent) -> bool {
         match _event {
-            WindowEvent::CursorMoved {position, .. } =>{
+            WindowEvent::CursorMoved { position, .. } => {
                 self.last_mouse_position = ((position.x as f32 / self.config.width as f32 * 2.0) - 1.0,
                                             ((position.y as f32 / self.config.height as f32 * 2.0) - 1.0) * -1.0);
             }
@@ -104,7 +104,7 @@ impl State {
                     None => {}
                     Some(root) => {
                         root.on_click(self.last_mouse_position);
-                        root.resize((0.0,1.0), (1.0, -1.0));
+                        root.resize((0.0, 1.0), (1.0, -1.0));
                     }
                 }
             }
@@ -123,49 +123,50 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        use components::layout::LayoutComponent;
         use components::plain::PlainComponent;
 
         if self.root.is_none() {
-            let mut layout_component = LayoutComponent::new(None,
-                                                            (-0.7, 0.7),
-                                                            (0.7, -0.7));
+            let mut layout_component = LayoutComponent::new(
+                (-0.7, 0.7),
+                (0.7, -0.7));
 
-            let mut layout_component2 = LayoutComponent::new(Some(&layout_component),
-                                                             (-1.0, 0.7),
-                                                             (1.0, -1.0));
+            let mut layout_component2 = LayoutComponent::new(
+                (-1.0, 0.7),
+                (1.0, -1.0));
 
-            let mut layout_component3 = LayoutComponent::new(Some(&layout_component2),
-                                                             (0.0, 1.0),
-                                                             (1.0, -1.0));
+            let mut layout_component3 = LayoutComponent::new(
+                (0.0, 1.0),
+                (1.0, -1.0));
 
-            let plain_component = PlainComponent::new(&layout_component,
-                                                      (-1.0, 1.0),
-                                                      (1.0, 0.7),
-                                                      [1.0, 1.0, 0.0],
-                                                      &self.device,
-                                                      &self
+            let plain_component = PlainComponent::new(
+                (-1.0, 1.0),
+                (1.0, 0.7),
+                [1.0, 1.0, 0.0],
+                &self.device,
+                &self.config,
             );
 
-            let plain_component2 = PlainComponent::new(&layout_component2,
-                                                       (-1.0, 1.0),
-                                                       (0.0, -1.0),
-                                                       [1.0, 0.0, 0.0],
-                                                       &self.device,
-                                                       &self);
+            let plain_component2 = PlainComponent::new(
+                (-1.0, 1.0),
+                (0.0, -1.0),
+                [1.0, 0.0, 0.0],
+                &self.device,
+                &self.config,
+            );
 
-            let plain_component3 = PlainComponent::new(&layout_component3,
-                                                       (-1.0, 1.0),
-                                                       (1.0, 0.0),
-                                                       [0.0, 1.0, 0.0],
-                                                       &self.device,
-                                                       &self);
-            let clickable_component = ClickableComponent::new(&layout_component3,
-                                                              (-1.0, 0.0),
-                                                              (1.0, -1.0),
-                                                              [0.0, 0.0, 1.0],
-                                                              &self.device,
-                                                              &self);
+            let plain_component3 = PlainComponent::new(
+                (-1.0, 1.0),
+                (1.0, 0.0),
+                [0.0, 1.0, 0.0],
+                &self.device,
+                &self.config,
+            );
+            let clickable_component = ClickableComponent::new(
+                (-1.0, 0.0),
+                (1.0, -1.0),
+                [0.0, 0.0, 1.0],
+                &self.device,
+                &self.config);
 
             layout_component3.add_component(Box::new(plain_component3));
             layout_component3.add_component(Box::new(clickable_component));
@@ -216,9 +217,9 @@ impl State {
             //quadrat.draw(&mut render_pass);
             //quadrat2.draw(&mut render_pass);
 
-            match &self.root {
-                None => {}
-                Some(root) => {root.render(&mut render_pass)}
+            if self.root.is_some()
+            {
+                self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
             }
         }
 
