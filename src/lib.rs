@@ -6,14 +6,14 @@ use winit::{
     window::WindowBuilder,
     window::Window,
 };
+use texture_quad::TextureQuad;
 use crate::components::clickable::ClickableComponent;
 use crate::components::component::Component;
 use crate::components::layout::LayoutComponent;
 
 use crate::shape::Shape;
 use crate::shapes::oval::Oval;
-use crate::shapes::shape;
-
+use crate::shapes::{shape, texture_quad};
 mod texture;
 mod shapes;
 mod components;
@@ -26,6 +26,8 @@ pub struct State {
     size: winit::dpi::PhysicalSize<u32>,
 
     last_mouse_position: (f32,f32),
+
+    texture_testing: Option<TextureQuad>,
 
     root: Option<LayoutComponent>,
 }
@@ -80,7 +82,8 @@ impl State {
             queue,
             config,
             size,
-            last_mouse_position: (0.0, 0.0)
+            last_mouse_position: (0.0, 0.0),
+            texture_testing: None
         }
     }
 
@@ -184,6 +187,10 @@ impl State {
         let oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
         let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
 
+        if self.texture_testing.is_none() {
+            self.texture_testing = Some(TextureQuad::new((-0.5, 0.5), (-0.0, 0.0), String::from("src/shapes/franklin_transparent.png"), (0.0, 0.0), (1.0, 1.0), &self.device, &self.queue, &self));
+        }
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -219,6 +226,10 @@ impl State {
             match &self.root {
                 None => {}
                 Some(root) => {root.render(&mut render_pass)}
+            }
+
+            if self.texture_testing.is_some() {
+                self.texture_testing.as_ref().unwrap().draw(&mut render_pass);
             }
         }
 
