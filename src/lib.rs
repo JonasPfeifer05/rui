@@ -11,12 +11,15 @@ use crate::components::component::Component;
 use crate::components::layout::LayoutComponent;
 
 use crate::shape::Shape;
+use crate::shapes::line_svg::LineSvg;
 use crate::shapes::oval::Oval;
 use crate::shapes::shape;
+use crate::svg::Line;
 
 mod texture;
 mod shapes;
 mod components;
+mod svg;
 
 pub struct State {
     surface: wgpu::Surface,
@@ -185,6 +188,11 @@ impl State {
         let oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
         let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
 
+        use self::svg::Svg;
+        let svg = Svg::new("src/font2.ttf");
+
+        let line = LineSvg::new(svg.get_lines('A'), [1.0,0.0,0.0], &self.device, &self);
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -209,17 +217,19 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            oval.draw(&mut render_pass);
-            oval1.draw(&mut render_pass);
-            oval2.draw(&mut render_pass);
-            oval3.draw(&mut render_pass);
+            //oval.draw(&mut render_pass);
+            //oval1.draw(&mut render_pass);
+            //oval2.draw(&mut render_pass);
+            //oval3.draw(&mut render_pass);
+
+            line.draw(&mut render_pass);
 
             //quadrat.draw(&mut render_pass);
             //quadrat2.draw(&mut render_pass);
 
             if self.root.is_some()
             {
-                self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
+                //self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
             }
         }
 

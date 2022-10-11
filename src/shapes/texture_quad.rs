@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use wgpu::{BindGroup, BindGroupLayoutEntry, Buffer, BufferAddress, Device, IndexFormat, Queue, RenderPass, RenderPipeline, VertexBufferLayout};
 use wgpu::util::DeviceExt;
-use crate::shape::Vertex;
 use crate::{Shape, State};
+use crate::shapes::vertex::Vertex;
 use super::super::texture::Texture;
 
 #[repr(C)]
