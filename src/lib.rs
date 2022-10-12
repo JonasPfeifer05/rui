@@ -6,6 +6,7 @@ use winit::{
     window::WindowBuilder,
     window::Window,
 };
+use crate::components::button::ButtonComponent;
 use crate::components::clickable::ClickableComponent;
 use crate::components::component::Component;
 use crate::components::layout::LayoutComponent;
@@ -168,8 +169,12 @@ impl State {
                 &self.device,
                 &self.config);
 
+            let button_component = ButtonComponent::new((-1.0, 1.0), (1.0, -1.0), [1.0, 0.0, 1.0], |pos| { println!("{:?}", pos); }, &self.device,
+                                                        &self.config);
+
             layout_component3.add_component(Box::new(plain_component3));
             layout_component3.add_component(Box::new(clickable_component));
+            layout_component3.add_component(Box::new(button_component));
 
             layout_component2.add_component(Box::new(layout_component3));
             layout_component2.add_component(Box::new(plain_component2));
