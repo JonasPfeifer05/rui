@@ -226,7 +226,7 @@ impl Shape for TextureQuad {
         &self.render_pipeline
     }
 
-    fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn draw<'a>(&'a mut self, render_pass: &mut RenderPass<'a>) {
         render_pass.set_pipeline(self.get_render_pipeline());
 
         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);

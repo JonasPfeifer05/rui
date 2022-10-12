@@ -1,15 +1,25 @@
-use wgpu::{BindGroup, Buffer, BufferAddress, Device, IndexFormat, RenderPass, RenderPipeline, VertexBufferLayout};
+use ttf_parser::gdef::GlyphClass::Component;
+use wgpu::{BindGroup, BindGroupLayout, BindGroupLayoutEntry, Buffer, BufferAddress, Device, IndexFormat, RenderPass, RenderPipeline, SurfaceConfiguration, VertexBufferLayout};
 use wgpu::util::DeviceExt;
 use crate::{Line, Shape, State};
+use crate::components::component::ComponentUtils;
 use crate::shapes::vertex::{BasicColorVertex, Vertex};
 
 pub struct LineSvg {
     lines: Vec<Line>,
     color:[f32;3],
 
+    parent_top_left: (f32,f32),
+    parent_bottom_right: (f32,f32),
+
     vertex_buffer: Buffer,
     indices_buffer: Buffer,
     uniform_bind_group: BindGroup,
+
+    uniform_layout: BindGroupLayout,
+
+    len_buffer: Buffer,
+    screen_buffer: Buffer,
 
     render_pipeline: RenderPipeline,
 
@@ -18,19 +28,11 @@ pub struct LineSvg {
 
 
 impl LineSvg {
-    pub fn new(lines: Vec<Line>, color: [f32; 3], device: &Device, state: &State) -> Self {
+    pub fn new(lines: Vec<Line>, color: [f32; 3], parent_top_left: (f32,f32), parent_bottom_right: (f32,f32), device: &Device, config: &SurfaceConfiguration) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(include_str!("../golygon.wgsl").into()),
         });
-
-        let line_uniform_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&lines),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            }
-        );
 
         let len_uniform_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -43,7 +45,7 @@ impl LineSvg {
         let screen_uniform_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Uniform Buffer"),
-                contents: bytemuck::cast_slice(&[state.config.width as f32, state.config.height as f32]),
+                contents: bytemuck::cast_slice(&[config.width as f32, config.height as f32]),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             }
         );
@@ -90,7 +92,7 @@ impl LineSvg {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: line_uniform_buffer.as_entire_binding(),
+                    resource: Self::generate_line_uniform(&lines, parent_top_left, parent_bottom_right, config, device).as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -127,7 +129,7 @@ impl LineSvg {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState { // 4.
-                    format: state.config.format,
+                    format: config.format,
                     blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -155,28 +157,58 @@ impl LineSvg {
 
         let mut num_indices: u32 = 0;
 
-        let vertex_buffer = Self::generate_vertex_buffer(&lines, &color, &device);
+        let vertex_buffer = Self::generate_vertex_buffer(&lines, parent_top_left, parent_bottom_right, &color, config, device);
         let indices_buffer = Self::generate_indices_buffer(&lines, &mut num_indices, &device);
 
         Self {
             lines,
             color,
+            parent_top_left,
+            parent_bottom_right,
             vertex_buffer,
             indices_buffer,
             uniform_bind_group,
+            uniform_layout: uniform_bind_group_layout,
+            len_buffer: len_uniform_buffer,
+            screen_buffer: screen_uniform_buffer,
             render_pipeline,
             num_indices
         }
     }
 
-    fn generate_vertex_buffer(lines: &Vec<Line>, color: &[f32; 3], device: &Device) -> Buffer {
+    fn generate_line_uniform(lines: &Vec<Line>, parent_top_left: (f32,f32), parent_bottom_right: (f32,f32), config: &SurfaceConfiguration, device: &Device) -> Buffer {
+        let mut abs_lines: Vec<Line> = Vec::new();
+
+        for line in lines {
+            let mut point1 = ComponentUtils::calculate_absolute_point_from_relative_view_points(parent_top_left, parent_bottom_right, (line.x1, line.y1));
+            let mut point2 = ComponentUtils::calculate_absolute_point_from_relative_view_points(parent_top_left, parent_bottom_right, (line.x2, line.y2));
+
+            abs_lines.push(Line {x1: point1.0,y1: point1.1, x2: point2.0, y2: point2.1});
+        }
+
+        let line_uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&abs_lines),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        line_uniform_buffer
+    }
+
+    fn generate_vertex_buffer(lines: &Vec<Line>, parent_top_left: (f32,f32), parent_bottom_right: (f32,f32), color: &[f32; 3], config: &SurfaceConfiguration, device: &Device) -> Buffer {
         let mut vertices: Vec<BasicColorVertex> = Vec::new();
 
         vertices.push(BasicColorVertex {position: [-1.0,1.0,0.0], color: color.clone()});
 
         for line in lines {
-            vertices.push(BasicColorVertex {position: [line.x1, line.y1, 0.0], color: color.clone() });
-            vertices.push(BasicColorVertex {position: [line.x2, line.y2, 0.0], color: color.clone() });
+
+            let mut point1 = ComponentUtils::calculate_absolute_point_from_relative_view_points(parent_top_left, parent_bottom_right, (line.x1, line.y1));
+            let mut point2 = ComponentUtils::calculate_absolute_point_from_relative_view_points(parent_top_left, parent_bottom_right, (line.x2, line.y2));
+
+            vertices.push(BasicColorVertex {position: [point1.0, point1.1, 0.0], color: color.clone() });
+            vertices.push(BasicColorVertex {position: [point2.0, point2.1, 0.0], color: color.clone() });
         }
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -184,7 +216,6 @@ impl LineSvg {
             contents: bytemuck::cast_slice(&vertices),
             usage: wgpu::BufferUsages::VERTEX,
         });
-
         vertex_buffer
     }
 
@@ -208,6 +239,67 @@ impl LineSvg {
 
         indices_buffer
     }
+
+    pub fn resize(&mut self, parent_top_left: (f32,f32), parent_bottom_right: (f32,f32), config: &SurfaceConfiguration, device: &Device) {
+        self.parent_top_left = parent_top_left;
+        self.parent_bottom_right = parent_bottom_right;
+
+        self.update_vertex_buffer(config,device);
+
+
+        self.uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.uniform_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: Self::generate_line_uniform(&self.lines, parent_top_left, parent_bottom_right, config, device).as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: self.len_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: self.screen_buffer.as_entire_binding(),
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
+    }
+
+    fn update_vertex_buffer(&mut self, config: &SurfaceConfiguration, device: &Device) {
+        self.vertex_buffer = LineSvg::generate_vertex_buffer(&self.lines, self.parent_top_left, self.parent_bottom_right, &self.color, config, device);
+    }
+
+    pub fn update_screen_uniform(&mut self, config: &SurfaceConfiguration, device: &Device) {
+
+        let screen_uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[config.width as f32, config.height as f32]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        self.uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.uniform_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: Self::generate_line_uniform(&self.lines, self.parent_top_left, self.parent_bottom_right, config, device).as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: self.len_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: screen_uniform_buffer.as_entire_binding(),
+                }
+            ],
+            label: Some("uniform_bind_group"),
+        });
+    }
 }
 
 impl Shape for LineSvg {
@@ -218,7 +310,6 @@ impl Shape for LineSvg {
     }
 
     fn update_vertex_buffer(&mut self, device: &Device) {
-        self.vertex_buffer = LineSvg::generate_vertex_buffer(&self.lines, &self.color, &device);
     }
 
     fn get_indices_buffer(&self) -> &Buffer {
@@ -237,7 +328,7 @@ impl Shape for LineSvg {
         &self.render_pipeline
     }
 
-    fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    fn draw<'a>(&'a mut self, render_pass: &mut RenderPass<'a>) {
         render_pass.set_pipeline(self.get_render_pipeline());
 
         render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);

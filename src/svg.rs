@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::fs::File;
 use ttf_parser::{Face, Rect};
+use winit::event::VirtualKeyCode::M;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -82,14 +83,14 @@ impl Svg {
                     let old_position = current_pos.clone();
                     current_pos = Svg::get_position(tokens.get(1).unwrap(), tokens.get(2).unwrap());
                     let mut line = Line { x1: old_position.0, y1: old_position.1, x2: current_pos.0, y2: current_pos.1 };
-                    Svg::zero_to_one(&mut line, &rect);
+                    Svg::neg_to_one(&mut line, &rect);
                     lines.push(line);
                 }
                 &"Q" => {
                     let old_position = current_pos.clone();
                     current_pos = Svg::get_position(tokens.get(3).unwrap(), tokens.get(4).unwrap());
                     let mut line = Line { x1: old_position.0, y1: old_position.1, x2: current_pos.0, y2: current_pos.1 };
-                    Svg::zero_to_one(&mut line, &rect);
+                    Svg::neg_to_one(&mut line, &rect);
                     lines.push(line);}
                 &"Z" => {
 
@@ -101,12 +102,22 @@ impl Svg {
         lines
     }
 
-    fn zero_to_one(line: &mut Line, rect: &Rect) {
+    fn neg_to_one(line: &mut Line, rect: &Rect) {
         line.x1 /= rect.width() as f32;
+        line.x1 *= 2.0;
+        line.x1 -= 1.0;
+
         line.y1 /= rect.height() as f32;
+        line.y1 *= 2.0;
+        line.y1 -= 1.0;
 
         line.x2 /= rect.width() as f32;
+        line.x2 *= 2.0;
+        line.x2 -= 1.0;
+
         line.y2 /= rect.height() as f32;
+        line.y2 *= 2.0;
+        line.y2 -= 1.0;
     }
 
     fn get_position(x: &str, y: &str) -> (f32,f32) {
@@ -114,6 +125,16 @@ impl Svg {
         let y_float = y.parse::<f32>().unwrap();
 
         (x_float, y_float)
+    }
+
+    pub fn test_glyph(&self, letter: char) {
+        let face = Face::parse(&self.data, 0).unwrap();
+
+        let id = face.glyph_index(letter).unwrap();
+
+        let test = face.glyph_hor_advance(id).unwrap();
+
+        println!("{:?}", test);
     }
 }
 

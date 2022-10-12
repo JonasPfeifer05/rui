@@ -9,6 +9,7 @@ use winit::{
 use crate::components::clickable::ClickableComponent;
 use crate::components::component::Component;
 use crate::components::layout::LayoutComponent;
+use crate::components::text::TextComponent;
 
 use crate::shape::Shape;
 use crate::shapes::line_svg::LineSvg;
@@ -164,6 +165,19 @@ impl State {
                 &self.device,
                 &self.config,
             );
+
+            use self::svg::Svg;
+            let svg = Svg::new("src/font5.ttf");
+
+            let text_component = TextComponent::new((-1.0, 1.0),
+                                                    (1.0, 0.0),
+                                                    svg,
+                                                    'A',
+                                                    [0.0, 1.0, 0.0],
+                                                    &self.device,
+                                                    &self.config,
+            );
+
             let clickable_component = ClickableComponent::new(
                 (-1.0, 0.0),
                 (1.0, -1.0),
@@ -171,7 +185,7 @@ impl State {
                 &self.device,
                 &self.config);
 
-            layout_component3.add_component(Box::new(plain_component3));
+            layout_component3.add_component(Box::new(text_component));
             layout_component3.add_component(Box::new(clickable_component));
 
             layout_component2.add_component(Box::new(layout_component3));
@@ -187,12 +201,6 @@ impl State {
         let oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
         let oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
         let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
-
-        use self::svg::Svg;
-        let svg = Svg::new("src/font5.ttf");
-
-        let line = LineSvg::new(svg.get_lines('D'), [0.0,0.0,0.0], &self.device, &self);
-
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -222,14 +230,29 @@ impl State {
             //oval2.draw(&mut render_pass);
             //oval3.draw(&mut render_pass);
 
-            line.draw(&mut render_pass);
+            /*
+            if self.line1.is_some() {
+                self.line1.as_ref().unwrap().draw(&mut render_pass);
+            }
+            */
+            /*
+            if self.line2.is_some() {
+                self.line2.as_ref().unwrap().draw(&mut render_pass);
+            }
+            if self.line3.is_some() {
+                self.line3.as_ref().unwrap().draw(&mut render_pass);
+            }
+            if self.line4.is_some() {
+                self.line4.as_ref().unwrap().draw(&mut render_pass);
+            }
+             */
 
             //quadrat.draw(&mut render_pass);
             //quadrat2.draw(&mut render_pass);
 
             if self.root.is_some()
             {
-                //self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
+                self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
             }
         }
 

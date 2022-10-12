@@ -34,7 +34,7 @@ pub trait Component {
 pub struct ComponentUtils {}
 
 impl ComponentUtils {
-    fn view_to_compute(mut point: (f32, f32)) -> (f32, f32) {
+    pub fn view_to_compute(mut point: (f32, f32)) -> (f32, f32) {
         point.1 *= -1.0;
 
         point.0 += 1.0;
@@ -67,7 +67,18 @@ impl ComponentUtils {
         new_point
     }
 
-    pub fn calculate_absolute_from_relative_view_points(mut parent_top_left: (f32, f32), mut parent_bottom_right: (f32, f32), mut box_top_left: (f32, f32), mut box_bottom_right: (f32, f32)) -> ((f32, f32), (f32, f32)) {
+    pub fn calculate_absolute_point_from_relative_view_points(mut parent_top_left: (f32, f32), mut parent_bottom_right: (f32, f32), mut point: (f32,f32)) -> (f32, f32) {
+        parent_top_left = ComponentUtils::view_to_compute(parent_top_left);
+        parent_bottom_right = ComponentUtils::view_to_compute(parent_bottom_right);
+
+        point = ComponentUtils::view_to_compute(point);
+
+        point = ComponentUtils::compute_to_view(ComponentUtils::calculate_absolute(parent_top_left, parent_bottom_right, point));
+
+        point
+    }
+
+    pub fn calculate_absolute_box_from_relative_view_points(mut parent_top_left: (f32, f32), mut parent_bottom_right: (f32, f32), mut box_top_left: (f32, f32), mut box_bottom_right: (f32, f32)) -> ((f32, f32), (f32, f32)) {
         parent_top_left = ComponentUtils::view_to_compute(parent_top_left);
         parent_bottom_right = ComponentUtils::view_to_compute(parent_bottom_right);
 

@@ -31,10 +31,10 @@ impl ClickableComponent {
 impl Component for ClickableComponent {
     fn render<'a>(&'a mut self, parent_top_left: &(f32, f32), parent_bottom_right: &(f32, f32), render_pass: &mut RenderPass<'a>, device: &Device, config: &SurfaceConfiguration) {
         if self.basic.needs_resize {
-            let (absolute_top_left, absolut_bottom_right) = ComponentUtils::calculate_absolute_from_relative_view_points(parent_top_left.clone(),
-                                                                                                                         parent_bottom_right.clone(),
-                                                                                                                         self.basic.top_left,
-                                                                                                                         self.basic.bottom_right);
+            let (absolute_top_left, absolut_bottom_right) = ComponentUtils::calculate_absolute_box_from_relative_view_points(parent_top_left.clone(),
+                                                                                                                             parent_bottom_right.clone(),
+                                                                                                                             self.basic.top_left,
+                                                                                                                             self.basic.bottom_right);
 
             self.quad = Quad::new(absolute_top_left,
                                   absolut_bottom_right,
