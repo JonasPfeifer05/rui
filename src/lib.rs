@@ -189,9 +189,9 @@ impl State {
         let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
 
         use self::svg::Svg;
-        let svg = Svg::new("src/font2.ttf");
+        let svg = Svg::new("src/font5.ttf");
 
-        let line = LineSvg::new(svg.get_lines('A'), [1.0,0.0,0.0], &self.device, &self);
+        let line = LineSvg::new(svg.get_lines('D'), [0.0,0.0,0.0], &self.device, &self);
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {

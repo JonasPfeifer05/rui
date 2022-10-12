@@ -2,10 +2,14 @@ use std::fmt::Write;
 use std::fs::File;
 use ttf_parser::{Face, Rect};
 
-#[derive(Debug)]
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Line {
-    pub point1: (f32,f32),
-    pub point2: (f32,f32),
+    pub x1: f32,
+    pub y1: f32,
+
+    pub x2: f32,
+    pub y2: f32,
 }
 
 struct Builder(Vec<String>);
@@ -77,17 +81,20 @@ impl Svg {
                 &"L" => {
                     let old_position = current_pos.clone();
                     current_pos = Svg::get_position(tokens.get(1).unwrap(), tokens.get(2).unwrap());
-                    let mut line = Line { point1: old_position, point2: current_pos.clone() };
+                    let mut line = Line { x1: old_position.0, y1: old_position.1, x2: current_pos.0, y2: current_pos.1 };
                     Svg::zero_to_one(&mut line, &rect);
                     lines.push(line);
                 }
                 &"Q" => {
                     let old_position = current_pos.clone();
                     current_pos = Svg::get_position(tokens.get(3).unwrap(), tokens.get(4).unwrap());
-                    let mut line = Line { point1: old_position, point2: current_pos.clone() };
+                    let mut line = Line { x1: old_position.0, y1: old_position.1, x2: current_pos.0, y2: current_pos.1 };
                     Svg::zero_to_one(&mut line, &rect);
                     lines.push(line);}
-                &_ => {}
+                &"Z" => {
+
+                }
+                &err => {println!("{}",err)}
             }
         }
 
@@ -95,11 +102,11 @@ impl Svg {
     }
 
     fn zero_to_one(line: &mut Line, rect: &Rect) {
-        line.point1.0 /= rect.width() as f32;
-        line.point1.1 /= rect.height() as f32;
+        line.x1 /= rect.width() as f32;
+        line.y1 /= rect.height() as f32;
 
-        line.point2.0 /= rect.width() as f32;
-        line.point2.1 /= rect.height() as f32;
+        line.x2 /= rect.width() as f32;
+        line.y2 /= rect.height() as f32;
     }
 
     fn get_position(x: &str, y: &str) -> (f32,f32) {

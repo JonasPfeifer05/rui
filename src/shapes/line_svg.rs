@@ -1,8 +1,7 @@
-use wgpu::{Buffer, BufferAddress, Device, IndexFormat, RenderPass, RenderPipeline, VertexBufferLayout};
+use wgpu::{BindGroup, Buffer, BufferAddress, Device, IndexFormat, RenderPass, RenderPipeline, VertexBufferLayout};
 use wgpu::util::DeviceExt;
-use crate::{Shape, State};
+use crate::{Line, Shape, State};
 use crate::shapes::vertex::{BasicColorVertex, Vertex};
-use crate::svg::Line;
 
 pub struct LineSvg {
     lines: Vec<Line>,
@@ -10,23 +9,107 @@ pub struct LineSvg {
 
     vertex_buffer: Buffer,
     indices_buffer: Buffer,
+    uniform_bind_group: BindGroup,
 
     render_pipeline: RenderPipeline,
 
     num_indices: u32,
 }
 
+
 impl LineSvg {
     pub fn new(lines: Vec<Line>, color: [f32; 3], device: &Device, state: &State) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
-            source: wgpu::ShaderSource::Wgsl(include_str!("../quad.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../golygon.wgsl").into()),
+        });
+
+        let line_uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&lines),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let len_uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[lines.len()]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let screen_uniform_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Uniform Buffer"),
+                contents: bytemuck::cast_slice(&[state.config.width as f32, state.config.height as f32]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        );
+
+        let uniform_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+
+            ],
+            label: Some("uniform_bind_group_layout"),
+        });
+
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: line_uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: len_uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: screen_uniform_buffer.as_entire_binding(),
+                }
+            ],
+            label: Some("uniform_bind_group"),
         });
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[
+                    &uniform_bind_group_layout
+                ],
                 push_constant_ranges: &[],
             });
 
@@ -76,11 +159,11 @@ impl LineSvg {
         let indices_buffer = Self::generate_indices_buffer(&lines, &mut num_indices, &device);
 
         Self {
-
             lines,
             color,
             vertex_buffer,
             indices_buffer,
+            uniform_bind_group,
             render_pipeline,
             num_indices
         }
@@ -92,8 +175,8 @@ impl LineSvg {
         vertices.push(BasicColorVertex {position: [-1.0,1.0,0.0], color: color.clone()});
 
         for line in lines {
-            vertices.push(BasicColorVertex {position: [line.point1.0, line.point1.1, 0.0], color: color.clone() });
-            vertices.push(BasicColorVertex {position: [line.point2.0, line.point2.1, 0.0], color: color.clone() });
+            vertices.push(BasicColorVertex {position: [line.x1, line.y1, 0.0], color: color.clone() });
+            vertices.push(BasicColorVertex {position: [line.x2, line.y2, 0.0], color: color.clone() });
         }
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -157,6 +240,7 @@ impl Shape for LineSvg {
     fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         render_pass.set_pipeline(self.get_render_pipeline());
 
+        render_pass.set_bind_group(0, &self.uniform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.get_vertex_buffer().slice(..));
         render_pass.set_index_buffer(self.get_indices_buffer().slice(..), IndexFormat::Uint16);
 
