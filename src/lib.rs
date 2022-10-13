@@ -9,11 +9,10 @@ use winit::{
 use crate::components::clickable::ClickableComponent;
 use crate::components::component::Component;
 use crate::components::layout::LayoutComponent;
-use crate::components::text::TextComponent;
+use crate::components::text::{FontStyle, TextComponent};
 
 use crate::shape::Shape;
 use crate::shapes::line_svg::LineSvg;
-use crate::shapes::oval::Oval;
 use crate::shapes::shape;
 use crate::svg::Line;
 
@@ -108,7 +107,6 @@ impl State {
                     None => {}
                     Some(root) => {
                         root.on_click(self.last_mouse_position);
-                        root.resize((0.0, 1.0), (1.0, -1.0));
                     }
                 }
             }
@@ -131,8 +129,8 @@ impl State {
 
         if self.root.is_none() {
             let mut layout_component = LayoutComponent::new(
-                (-0.7, 0.7),
-                (0.7, -0.7));
+                (-1.0, 1.0),
+                (1.0, -1.0));
 
             let mut layout_component2 = LayoutComponent::new(
                 (-1.0, 0.7),
@@ -173,7 +171,11 @@ impl State {
                                                     (1.0, 0.0),
                                                     svg,
                                                     'A',
-                                                    [0.0, 1.0, 0.0],
+                                                    FontStyle {
+                                                        size_x: 100.0,
+                                                        size_y: 100.0,
+                                                        color: [0.5,0.5,1.0]
+                                                    },
                                                     &self.device,
                                                     &self.config,
             );
@@ -197,10 +199,6 @@ impl State {
             self.root = Some(layout_component);
         }
 
-        let oval = Oval::new((1.0, 1.0), (0.1, 0.1), 64, [1.0, 0.1, 0.1], &self.device, &self);
-        let oval1 = Oval::new((-1.0, 1.0), (0.5, 0.1), 64, [0.1, 1.0, 0.1], &self.device, &self);
-        let oval2 = Oval::new((1.0, -1.0), (0.5, 0.1), 64, [0.1, 0.1, 1.0], &self.device, &self);
-        let oval3 = Oval::new((-1.0, -1.0), (0.1, 0.1), 64, [1.0, 1.0, 0.1], &self.device, &self);
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
@@ -225,60 +223,11 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            //oval.draw(&mut render_pass);
-            //oval1.draw(&mut render_pass);
-            //oval2.draw(&mut render_pass);
-            //oval3.draw(&mut render_pass);
-
-            /*
-            if self.line1.is_some() {
-                self.line1.as_ref().unwrap().draw(&mut render_pass);
-            }
-            */
-            /*
-            if self.line2.is_some() {
-                self.line2.as_ref().unwrap().draw(&mut render_pass);
-            }
-            if self.line3.is_some() {
-                self.line3.as_ref().unwrap().draw(&mut render_pass);
-            }
-            if self.line4.is_some() {
-                self.line4.as_ref().unwrap().draw(&mut render_pass);
-            }
-             */
-
-            //quadrat.draw(&mut render_pass);
-            //quadrat2.draw(&mut render_pass);
-
             if self.root.is_some()
             {
                 self.root.as_mut().unwrap().render(&(-1.0, 1.0), &(1.0, -1.0), &mut render_pass, &self.device, &self.config);
             }
         }
-
-        /*
-        let render_pipeline = Quad::create_render_pipeline(&self);
-        let quad2 = Quad::new(&self.device, (-0.9,0.9), (0.3,-0.9));
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[
-                    // This is what @location(0) in the fragment shader targets
-                    Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: true,
-                        },
-                    })
-                ],
-                depth_stencil_attachment: None,
-            });
-            render_pass.set_pipeline(&render_pipeline);
-            quad2.render(&mut render_pass);
-        }
-         */
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
